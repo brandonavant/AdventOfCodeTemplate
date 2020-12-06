@@ -23,7 +23,9 @@ namespace AdventOfCodeTemplate.App.Services
 
         public async Task Run()
         {
-            var x = await  _inputService.GetInput(2020, 1);
+            var input = await  _inputService.GetInput(2020, 1);
+
+            _logger.LogInformation($"{input.Data.Length} entries.");
         }
     }
 }
