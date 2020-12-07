@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace AdventOfCodeTemplate.Base.Exceptions
 {
-    class RuleValidationException : Exception
+    public class RuleValidationException : Exception
     {
         public IRule BrokenRule { get; }
 
