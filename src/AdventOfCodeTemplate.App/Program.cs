@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using AdventOfCodeTemplate.App.Services;
 using AdventOfCodeTemplate.Base.Services;
@@ -15,11 +16,11 @@ namespace AdventOfCodeTemplate.App
         {
             // Build configuration
             var builder = new ConfigurationBuilder();
-            BuildConfig(builder);
+            var configuration = BuildConfig(builder);
 
             // Configure SeriLog
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Build())
+                .ReadFrom.Configuration(configuration)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .CreateLogger();
@@ -29,20 +30,34 @@ namespace AdventOfCodeTemplate.App
                 {
                     services.AddTransient<ISolutionService, SolutionService>();
                     services.AddScoped<IInputService, InputService>();
+                    services.AddSingleton<IConfiguration>(configuration);
                 })
                 .UseSerilog()
                 .Build();
 
             var solutionService = ActivatorUtilities.CreateInstance<SolutionService>(host.Services);
 
-            solutionService.Run().GetAwaiter().GetResult();
+            try
+            {
+                solutionService.Run().GetAwaiter().GetResult();
+            }
+            catch (ArgumentException ex)
+            {
+                Log.Logger.Error(ex, "Invalid input/configuration.");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "An unhandled exception has occurred.");
+            }
         }
 
-        static void BuildConfig(IConfigurationBuilder builder)
+        static IConfiguration BuildConfig(IConfigurationBuilder builder)
         {
-            builder.SetBasePath(Directory.GetCurrentDirectory())
+            return builder.SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables();
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
         }
     }
 }
